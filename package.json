@@ -1,0 +1,31 @@
+{
+  "name": "rnd--scss-sass",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "clean": "gulp clean --require @babel/register",
+    "lint": "gulp lint --require @babel/register",
+    "watch": "export NODE_ENV=development && gulp watch --require @babel/register",
+    "compile": "export NODE_ENV=production && gulp compile --require @babel/register"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.17.9",
+    "@babel/register": "^7.17.7",
+    "@babel/plugin-transform-runtime": "^7.19.6",
+    "@babel/preset-env": "^7.20.2",
+    "autoprefixer": "^10.4.4",
+    "dart-sass": "^1.25.0",
+    "del": "^6.0.0",
+    "gulp": "^4.0.2",
+    "gulp-clean-css": "^4.3.0",
+    "gulp-debug": "^4.0.0",
+    "gulp-hub": "^4.2.0",
+    "gulp-plumber": "^1.2.1",
+    "gulp-postcss": "^9.0.1",
+    "gulp-rename": "^2.0.0",
+    "gulp-sass": "^5.1.0"
+  }
+}

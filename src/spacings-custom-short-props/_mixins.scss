@@ -1,0 +1,43 @@
+@use "sass:map";
+
+@mixin generate-css-property($utility, $breakpoint) {
+  $properties: map.get($utility, property);
+
+  @if (type-of($properties) == "string") {
+    $properties: list.append((), $properties);
+  }
+
+  $property-name: if(
+    map.has-key($utility, spacingkey),
+    map.get($utility, spacingkey),
+    list.nth($properties, 1)
+  );
+  $property-name: if($property-name == null, "", $property-name);
+
+  $data: map.get($utility, values);
+  @each $bp, $values in $data {
+    @if ($bp == $breakpoint) {
+      @each $key, $value in $values {
+        @each $property in $properties {
+          --#{$property-name + $key}: #{$value};
+        }
+      }
+    }
+  }
+}
+
+@mixin generate-custom-props() {
+  @each $name, $width in $breakpoints {
+    @if $name == default {
+      @each $key, $utility in $spacings {
+        @include generate-css-property($utility, $breakpoint: $name);
+      }
+    } @else {
+      @include susy-breakpoint($width) {
+        @each $key, $utility in $spacings {
+          @include generate-css-property($utility, $breakpoint: $name);
+        }
+      }
+    }
+  }
+}

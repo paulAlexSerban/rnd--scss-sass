@@ -1,0 +1,12 @@
+@import "./maps.scss";
+@import "./susy.scss";
+@import "./mixins.scss";
+
+:root {
+  @include generate-custom-props();
+}
+
+// How to use
+.margin-top {
+  margin-top: var(--s20);
+}

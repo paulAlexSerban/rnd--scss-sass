@@ -1,0 +1,43 @@
+@mixin generate-utility($utility, $breakpoint) {
+  $properties: map.get($utility, property);
+
+  @if (type-of($properties) == "string") {
+    $properties: list.append((), $properties);
+  }
+
+  $property-class: if(
+    map.has-key($utility, class),
+    map.get($utility, class),
+    list.nth($properties, 1)
+  );
+  $property-class: if($property-class == null, "", $property-class);
+
+  $data: map.get($utility, values);
+  @each $bp, $values in $data {
+    @if ($bp == $breakpoint) {
+      @each $key, $value in $values {
+        .#{$property-class + $key} {
+          @each $property in $properties {
+            #{$property}: $value !important;
+          }
+        }
+      }
+    }
+  }
+}
+
+@mixin generate-rules() {
+  @each $name, $width in $breakpoints {
+    @if $name == default {
+      @each $key, $utility in $spacings {
+        @include generate-utility($utility, $breakpoint: $name);
+      }
+    } @else {
+      @include susy-breakpoint($width) {
+        @each $key, $utility in $spacings {
+          @include generate-utility($utility, $breakpoint: $name);
+        }
+      }
+    }
+  }
+}

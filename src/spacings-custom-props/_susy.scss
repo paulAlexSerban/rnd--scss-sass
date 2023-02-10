@@ -1,0 +1,186 @@
+@use "sass:map";
+@use "sass:meta";
+@use "sass:string";
+
+$susy-media: () !default;
+$susy-media-fallback: false !default;
+
+$_susy-media-context: ();
+
+@mixin susy-breakpoint(
+  $query,
+  $layout: false,
+  $no-query: $susy-media-fallback
+) {
+  @include susy-media-router($query, $no-query) {
+    @if $layout {
+      @include with-layout($layout) {
+        @content;
+      }
+    } @else {
+      @content;
+    }
+  }
+}
+
+@mixin susy-media($query, $no-query: $susy-media-fallback) {
+  $old-context: $_susy-media-context;
+  $name: if(map.has-key($susy-media, $query), $query, null);
+  $query: susy-get-media($query);
+  $query: susy-parse-media($query);
+
+  @include susy-media-context($query, $name);
+
+  @if $no-query and type-of($no-query) != string {
+    @content;
+  } @else {
+    @media #{susy-render-media($query)} {
+      @content;
+    }
+
+    @if type-of($no-query) == string {
+      #{$no-query} & {
+        @content;
+      }
+    }
+  }
+
+  @include susy-media-context($old-context, $clean: true);
+}
+
+@mixin susy-media-router($query, $no-query: $susy-media-fallback) {
+  @if susy-support(
+    breakpoint,
+    (
+      mixin: breakpoint,
+    ),
+    $warn: false
+  )
+  {
+    @include breakpoint($query, $no-query) {
+      @content;
+    }
+  } @else {
+    @include susy-media($query, $no-query) {
+      @content;
+    }
+  }
+}
+
+@mixin susy-media-context($query, $name: null, $clean: false) {
+  $query: map.merge(
+    (
+      name: $name,
+    ),
+    $query
+  );
+
+  @if $clean {
+    $_susy-media-context: $query !global;
+  } @else {
+    $_susy-media-context: map.merge($_susy-media-context, $query) !global;
+  }
+}
+
+@function susy-media-context($property: false) {
+  @if $property {
+    @return map.get($_susy-media-context, $property);
+  } @else {
+    @return $_susy-media-context;
+  }
+}
+
+@function susy-get-media($name) {
+  @if map-has-key($susy-media, $name) {
+    $map-value: map.get($susy-media, $name);
+    @if ($name == $map-value) {
+      $name: $map-value;
+    } @else {
+      $name: susy-get-media($map-value);
+    }
+  }
+
+  @return $name;
+}
+
+@function susy-render-media($query) {
+  $output: null;
+  @each $property, $value in $query {
+    $string: null;
+
+    @if $property == media {
+      $string: $value;
+    } @else {
+      $string: "(#{$property}: #{$value})";
+    }
+
+    $output: if($output, "#{$output} and #{$string}", $string);
+  }
+
+  @return $output;
+}
+
+// Parse Media
+// -----------
+// Return parsed media-query settings based on shorthand
+@function susy-parse-media($query) {
+  $mq: null;
+  @if type-of($query) == map {
+    $mq: $query;
+  } @else if type-of($query) == number {
+    $mq: (
+      min-width: $query,
+    );
+  } @else if type-of($query) == list and length($query) == 2 {
+    @if type-of(list.nth($query, 1)) == number {
+      $mq: (
+        min-width: min($query...),
+        max-width: max($query...),
+      );
+    } @else {
+      $mq: (
+        list.nth($query, 1): list.nth($query, 2),
+      );
+    }
+  } @else {
+    $mq: (
+      media: "#{$query}",
+    );
+  }
+
+  @return $mq;
+}
+
+@function susy-support($feature, $requirements: (), $warn: true) {
+  $_support: susy-get(use-custom $feature);
+
+  @if $_support {
+    $_fail: false;
+
+    @each $_type, $_req in $requirements {
+      @each $_i in $_req {
+        $_pass: null;
+
+        // sass 3.5 or greater
+        @if function-exists("get-function") {
+          $_pass: meta.call(meta.get-function(string.unquote("#{$_type}-exists")), $_i);
+        }
+        // sass 3.4 or less
+        @else {
+          $_pass: meta.call(string.unquote("#{$_type}-exists"), $_i);
+        }
+
+        @if not($_pass) {
+          $_fail: true;
+          @if $warn {
+            @warn "You requested custom support of #{$feature}, but the #{$_i} #{$_type} is not available.";
+          }
+        }
+      }
+    }
+
+    $_support: if($_fail, false, $_support);
+  }
+
+  @return $_support;
+}
